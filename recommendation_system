@@ -1,0 +1,12 @@
+
+import pandas as pd
+import numpy as np
+
+videogames_cleaned = videogames.drop(columns=['Rank', 'NA_Sales', 'JP_Sales', 'Other_Sales'])
+videogames_cleaned.replace([np.inf, -np.inf], np.nan, inplace=True)
+videogames_cleaned.dropna(inplace=True)
+videogames_cleaned = videogames_cleaned.astype({"Publisher": str, "Year": int})
+
+videogames_cleaned['Platform'] = videogames_cleaned['Platform'].map(lambda x: x.lower())
+videogames_cleaned['Genre'] = videogames_cleaned['Genre'].map(lambda x: x.lower())
+videogames_cleaned['Publisher'] = videogames_cleaned['Publisher'].map(lambda x: x.lower())

@@ -10,3 +10,15 @@ videogames_cleaned = videogames_cleaned.astype({"Publisher": str, "Year": int})
 videogames_cleaned['Platform'] = videogames_cleaned['Platform'].map(lambda x: x.lower())
 videogames_cleaned['Genre'] = videogames_cleaned['Genre'].map(lambda x: x.lower())
 videogames_cleaned['Publisher'] = videogames_cleaned['Publisher'].map(lambda x: x.lower())
+
+videogames_cleaned['Title'] = ""
+videogames_cleaned = videogames_cleaned.astype({"Title": str})
+
+for index, row in videogames_cleaned.iterrows():
+  name = row['Name']
+  tokenizer = nltk.RegexpTokenizer(r"\w+")
+  title_tokens = tokenizer.tokenize(name)
+  new_title = " ".join(title_tokens).lower()
+  videogames_cleaned.at[index, 'Title'] = new_title
+
+videogames_cleaned.set_index('Name', inplace=True)

@@ -1,6 +1,8 @@
 
 import pandas as pd
 import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.feature_extraction.text import CountVectorizer
 
 videogames_cleaned = videogames.drop(columns=['Rank', 'NA_Sales', 'JP_Sales', 'Other_Sales'])
 videogames_cleaned.replace([np.inf, -np.inf], np.nan, inplace=True)
@@ -22,3 +24,28 @@ for index, row in videogames_cleaned.iterrows():
   videogames_cleaned.at[index, 'Title'] = new_title
 
 videogames_cleaned.set_index('Name', inplace=True)
+
+videogames_cleaned['bag_of_words']=''
+columns = videogames_cleaned.columns
+for index, row in videogames_cleaned.iterrows():
+  words=''
+  for col in columns:
+    if col=='Platform' or col=='Genre' or col == 'Publisher' or col=='Title':
+      words = words + row[col] + ' '
+
+  videogames_cleaned.at[index, 'bag_of_words'] = words
+
+videogames_cleaned.drop(columns=[col for col in videogames_cleaned.columns if col!='bag_of_words'], inplace= True)
+
+count = CountVectorizer()
+count_matrix = count.fit_transform(videogames_cleaned['bag_of_words'])
+
+indices = pd.Series(videogames_cleaned.index)
+indices[:5]
+#count_matrix
+
+cosine_sim = cosine_similarity(count_matrix, count_matrix)
+cosine_sim
+
+cosine_sim.shape
+

@@ -49,3 +49,18 @@ cosine_sim
 
 cosine_sim.shape
 
+def recommendations(title, cosine_sim = cosine_sim):
+  recommended_videogames = []
+
+  idx = indices[indices == title].index[0]
+
+  score_series = pd.Series(cosine_sim[idx]).sort_values(ascending= False)
+
+  top_20_indexes = list(score_series.iloc[1:21].index)
+
+  for i in top_20_indexes:
+    recommended_videogames.append(list(videogames_cleaned.index)[i])
+
+  return recommended_videogames
+
+recommendations('Fallout 4')

@@ -1,5 +1,6 @@
 # FIAproject
 Recommendation system for videogames
+
 Authors: Danese Salvatore, De Luca Ciro, Donisi Giovanni
 
 L'obiettivo del progetto proposto è quello di creare un algoritmo di content filtering di videogiochi sulla base del titolo di un prodotto fornito in input.

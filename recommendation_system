@@ -1,17 +1,35 @@
-
+!pip install rake_nltk
 import pandas as pd
 import numpy as np
+from rake_nltk import Rake
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 
-videogames_cleaned = videogames.drop(columns=['Rank', 'NA_Sales', 'JP_Sales', 'Other_Sales'])
-videogames_cleaned.replace([np.inf, -np.inf], np.nan, inplace=True)
-videogames_cleaned.dropna(inplace=True)
-videogames_cleaned = videogames_cleaned.astype({"Publisher": str, "Year": int})
+import nltk
+nltk.download('stopwords')
+nltk.download('punkt')
+
+videogames = pd.read_csv('vgsales.csv')
+videogames.head()
+
+videogames.describe()
+
+videogames.info()
+
+videogames['Year'] = videogames['Year'].replace(2020.0, 2009.0)
+videogames['Year'] = videogames['Year'].fillna(2006.0)
+videogames = videogames.dropna()
+
+videogames.info()
+
+videogames_cleaned = videogames.astype({"Publisher": str, "Year": int})
+videogames_cleaned.head()
 
 videogames_cleaned['Platform'] = videogames_cleaned['Platform'].map(lambda x: x.lower())
 videogames_cleaned['Genre'] = videogames_cleaned['Genre'].map(lambda x: x.lower())
 videogames_cleaned['Publisher'] = videogames_cleaned['Publisher'].map(lambda x: x.lower())
+
+videogames_cleaned.head()
 
 videogames_cleaned['Title'] = ""
 videogames_cleaned = videogames_cleaned.astype({"Title": str})
@@ -22,8 +40,17 @@ for index, row in videogames_cleaned.iterrows():
   title_tokens = tokenizer.tokenize(name)
   new_title = " ".join(title_tokens).lower()
   videogames_cleaned.at[index, 'Title'] = new_title
+  
+videogames_cleaned.head()
 
+videogames_cleaned = videogames_cleaned.drop(columns=['Rank', 'NA_Sales', 'EU_Sales','JP_Sales', 'Other_Sales'])
 videogames_cleaned.set_index('Name', inplace=True)
+videogames_cleaned.head()
+videogames_cleaned
+
+import matplotlib.pyplot as plt
+plt.boxplot(videogames_cleaned['Global_Sales'], vert=False, showmeans=True, meanline= True, labels=['Global_Sales'])
+plt.xlim(0, 1.0)
 
 videogames_cleaned['bag_of_words']=''
 columns = videogames_cleaned.columns
@@ -32,35 +59,66 @@ for index, row in videogames_cleaned.iterrows():
   for col in columns:
     if col=='Platform' or col=='Genre' or col == 'Publisher' or col=='Title':
       words = words + row[col] + ' '
+    if col=='Global_Sales':
+      if row[col] > 0.470000:
+        words = words + 'highsales' + ' '
+      elif row[col]>0.170000:
+        words = words + 'highmidsales' + ' '
+      elif row[col] > 0.060000:
+        words = words + 'lowmidsales' + ' '
+      else:
+        words = words + 'lowsales' + ' '
 
   videogames_cleaned.at[index, 'bag_of_words'] = words
 
+videogames_cleaned.head()
+
 videogames_cleaned.drop(columns=[col for col in videogames_cleaned.columns if col!='bag_of_words'], inplace= True)
+
+pd.set_option('display.max_rows', None)
+print(videogames_cleaned)
 
 count = CountVectorizer()
 count_matrix = count.fit_transform(videogames_cleaned['bag_of_words'])
-
 indices = pd.Series(videogames_cleaned.index)
-indices[:5]
-#count_matrix
 
-cosine_sim = cosine_similarity(count_matrix, count_matrix)
-cosine_sim
+print(count_matrix)
 
-cosine_sim.shape
+#similarity
+my_metric = cosine_similarity(count_matrix, count_matrix)
 
-def recommendations(title, cosine_sim = cosine_sim):
+#similarity
+#from sklearn.metrics.pairwise import rbf_kernel
+#my_metric = rbf_kernel(count_matrix, count_matrix)
+
+#distance
+#from sklearn.metrics import pairwise_distances
+#my_metric= pairwise_distances(count_matrix, count_matrix, metric='euclidean')
+
+#distance
+#from sklearn.metrics import pairwise_distances
+#my_metric= pairwise_distances(count_matrix, count_matrix, metric='manhattan')
+
+
+def recommendations(title, metric, is_dist, n):
   recommended_videogames = []
 
   idx = indices[indices == title].index[0]
 
-  score_series = pd.Series(cosine_sim[idx]).sort_values(ascending= False)
+  score_series = pd.Series(metric[idx]).sort_values(ascending=is_dist)
 
-  top_20_indexes = list(score_series.iloc[1:21].index)
+  top_n_indexes = list(score_series.iloc[1:100].index)
 
-  for i in top_20_indexes:
-    recommended_videogames.append(list(videogames_cleaned.index)[i])
+  count = 0
+
+  for i in top_n_indexes:
+    if count >= n:
+      break
+    if ((videogames_cleaned.index[i] not in recommended_videogames) and (videogames_cleaned.index[i]!=title)):
+      recommended_videogames.append(list(videogames_cleaned.index)[i])
+      count = count + 1
+
 
   return recommended_videogames
-
-recommendations('Fallout 4')
+  
+  recommendations('NBA 2K16', my_metric, False, 10)
